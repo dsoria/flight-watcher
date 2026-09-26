@@ -2,10 +2,11 @@ name: Check flight price
 
 on:
   schedule:
-    # Corre a las 13:00 y 23:00 UTC todos los días.
-    # Ajusta estas horas a tu gusto: https://crontab.guru
+    # CDMX / UTC:
+    # 08:00 CDMX = 13:00 UTC
+    # 20:00 CDMX = 01:00 UTC del día siguiente
     - cron: "0 13 * * *"
-    - cron: "0 23 * * *"
+    - cron: "0 1 * * *"
   workflow_dispatch: {}   # permite correrlo manualmente desde la pestaña "Actions"
 
 permissions:
