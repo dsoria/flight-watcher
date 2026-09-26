@@ -1,0 +1,11 @@
+{
+  "origin": "MEX",
+  "destination": "MAD",
+  "depart_date": "2026-12-10",
+  "return_date": "2026-12-20",
+  "target_price": 600,
+  "currency": "USD",
+  "seat": "economy",
+  "adults": 1,
+  "direct_only": true
+}
