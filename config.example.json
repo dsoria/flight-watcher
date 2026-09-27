@@ -1,8 +1,8 @@
 {
   "origin": "MEX",
   "destination": "MAD",
-  "depart_date": "2026-12-10",
-  "return_date": "2026-12-20",
+  "depart_dates": ["2027-01-03", "2027-01-04", "2027-01-05"],
+  "return_date": "2027-01-10",
   "target_price": 600,
   "currency": "USD",
   "seat": "economy",

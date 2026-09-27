@@ -59,6 +59,17 @@ def send_telegram(message: str):
         print(f"⚠️  Error enviando Telegram: {resp.status_code} {resp.text}")
 
 
+def get_depart_dates(cfg):
+    dates = cfg.get("depart_dates")
+    if dates is not None:
+        if isinstance(dates, str):
+            return [dates]
+        return [str(date) for date in dates]
+
+    depart_date = cfg.get("depart_date")
+    return [depart_date] if depart_date else []
+
+
 def build_query(cfg):
     direct_only = cfg.get("direct_only", False)
     max_stops = 0 if direct_only else None
@@ -123,6 +134,19 @@ def build_query(cfg):
     }
 
 
+def build_queries(cfg):
+    depart_dates = get_depart_dates(cfg)
+    if not depart_dates:
+        raise ValueError("No se encontró ninguna fecha de salida en config.json")
+
+    queries = []
+    for depart_date in depart_dates:
+        day_cfg = dict(cfg)
+        day_cfg["depart_date"] = depart_date
+        queries.append(build_query(day_cfg))
+    return depart_dates, queries
+
+
 def parse_price(value):
     if value is None:
         return float("inf")
@@ -150,18 +174,22 @@ def main():
 
     state = load_json(STATE_PATH, {"notified": False, "best_price": None})
 
-    query = build_query(cfg)
-    if create_query is not None and FlightQuery is not None:
-        result = get_flights(query)
-    else:
-        result = get_flights(**query)
+    depart_dates, queries = build_queries(cfg)
+    all_flights = []
+    for query in queries:
+        if create_query is not None and FlightQuery is not None:
+            result = get_flights(query)
+        else:
+            result = get_flights(**query)
 
-    flights = getattr(result, "flights", result if isinstance(result, list) else [])
-    if not flights:
+        flights = getattr(result, "flights", result if isinstance(result, list) else [])
+        all_flights.extend(flights)
+
+    if not all_flights:
         print("❌ No se encontraron vuelos para esa búsqueda.")
         sys.exit(1)
 
-    cheapest = min(flights, key=lambda f: parse_price(getattr(f, "price", None)))
+    cheapest = min(all_flights, key=lambda f: parse_price(getattr(f, "price", None)))
     price = parse_price(getattr(cheapest, "price", None))
     if price == float("inf"):
         print("❌ No se pudo obtener un precio válido para la opción más barata.")
@@ -169,9 +197,10 @@ def main():
 
     currency = cfg.get("currency", "USD")
     target = cfg.get("target_price")
+    dates_text = ", ".join(depart_dates)
 
     print(f"[{datetime.now(timezone.utc).isoformat()}] "
-          f"{cfg['origin']} → {cfg['destination']} el {cfg['depart_date']}: "
+          f"{cfg['origin']} → {cfg['destination']} en {dates_text}: "
           f"precio más barato = {price} {currency} (objetivo: {target} {currency})")
 
     now_iso = datetime.now(timezone.utc).isoformat()
@@ -180,11 +209,12 @@ def main():
 
     departure_time = getattr(cheapest, "departure", "N/A")
     arrival_time = getattr(cheapest, "arrival", "N/A")
+    departure_label = cfg.get("depart_date") if len(depart_dates) == 1 else dates_text
 
     msg = (
         f"✈️ <b>Precio más barato del día</b>\n\n"
         f"{cfg['origin']} → {cfg['destination']}\n"
-        f"Salida: {cfg['depart_date']}"
+        + (f"Fechas consultadas: {dates_text}\n" if len(depart_dates) > 1 else f"Salida: {departure_label}")
         + (f"\nHora de salida: {departure_time}" if departure_time and departure_time != "N/A" else "")
         + (f"\nRegreso: {cfg['return_date']}" if cfg.get("return_date") else "")
         + (f"\nHora de llegada: {arrival_time}" if arrival_time and arrival_time != "N/A" and cfg.get("return_date") is None else "")

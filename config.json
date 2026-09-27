@@ -1,7 +1,7 @@
 {
   "origin": "MEX",
   "destination": "MID",
-  "depart_date": "2027-01-05",
+  "depart_dates": ["2027-01-03", "2027-01-04", "2027-01-05"],
   "target_price": 8000,
   "currency": "MXN",
   "seat": "economy",
