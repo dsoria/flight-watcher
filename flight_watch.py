@@ -166,6 +166,26 @@ def parse_price(value):
         return float("inf")
 
 
+def get_flight_date(flight, depart_dates):
+    departure = getattr(flight, "departure", None)
+    if not departure:
+        return None
+
+    raw_date = str(departure).split(" on ", 1)[-1].strip()
+    normalized_raw = raw_date.replace(" 0", " ")
+
+    for depart_date in depart_dates:
+        dt = datetime.strptime(depart_date, "%Y-%m-%d")
+        candidates = {
+            dt.strftime("%a, %b %d").replace(" 0", " "),
+            dt.strftime("%a, %b %-d").replace(" 0", " "),
+        }
+        if normalized_raw in candidates:
+            return depart_date
+
+    return None
+
+
 def main():
     cfg = load_json(CONFIG_PATH, None)
     if cfg is None:
@@ -198,6 +218,7 @@ def main():
     currency = cfg.get("currency", "USD")
     target = cfg.get("target_price")
     dates_text = ", ".join(depart_dates)
+    cheapest_date = get_flight_date(cheapest, depart_dates) or depart_dates[0]
 
     print(f"[{datetime.now(timezone.utc).isoformat()}] "
           f"{cfg['origin']} → {cfg['destination']} en {dates_text}: "
@@ -212,7 +233,11 @@ def main():
     departure_label = cfg.get("depart_date") if len(depart_dates) == 1 else dates_text
 
     if len(depart_dates) > 1:
-        date_line = f"Fechas consultadas: {dates_text}\nOpción más barata entre esas fechas: {price} {currency}"
+        date_line = (
+            f"Fechas consultadas: {dates_text}\n"
+            f"Fecha con mejor precio: {cheapest_date}\n"
+            f"Opción más barata entre esas fechas: {price} {currency}"
+        )
     else:
         date_line = f"Salida: {departure_label}"
 
