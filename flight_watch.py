@@ -211,10 +211,15 @@ def main():
     arrival_time = getattr(cheapest, "arrival", "N/A")
     departure_label = cfg.get("depart_date") if len(depart_dates) == 1 else dates_text
 
+    if len(depart_dates) > 1:
+        date_line = f"Fechas consultadas: {dates_text}\nOpción más barata entre esas fechas: {price} {currency}"
+    else:
+        date_line = f"Salida: {departure_label}"
+
     msg = (
-        f"✈️ <b>Precio más barato del día</b>\n\n"
+        f"✈️ <b>Precio más barato encontrado</b>\n\n"
         f"{cfg['origin']} → {cfg['destination']}\n"
-        + (f"Fechas consultadas: {dates_text}\n" if len(depart_dates) > 1 else f"Salida: {departure_label}")
+        + date_line
         + (f"\nHora de salida: {departure_time}" if departure_time and departure_time != "N/A" else "")
         + (f"\nRegreso: {cfg['return_date']}" if cfg.get("return_date") else "")
         + (f"\nHora de llegada: {arrival_time}" if arrival_time and arrival_time != "N/A" and cfg.get("return_date") is None else "")
